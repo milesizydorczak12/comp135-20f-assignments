@@ -137,10 +137,59 @@ def make_train_and_test_row_ids_for_n_fold_cv(
 
     # TODO obtain a shuffled order of the n_examples
 
+    te_large = int(np.ceil(n_examples / n_folds))
+    # print("test_set_size_large:", te_large)
+    te_small = te_large - 1
+    # print("test_set_size_small:", te_small)
+
+
+    # pool_of_ints_n = np.arange(0, n_examples)
+    # print("pool_of_ints_n", pool_of_ints_n)
+    pool_n = random_state.permutation(n_examples)
+    # print("pool_n", pool_n)
+
     train_ids_per_fold = list()
     test_ids_per_fold = list()
-    
+
+    # Determine the size of each fold
+
+    num_folds_large = n_examples % n_folds
+    small_folds_start = te_large * num_folds_large
+
+    # The first num_folds_large folds will have the large test set size
+    for i in range(num_folds_large):
+        start_of_test = i * te_large
+        end_of_test = (i + 1) * te_large
+        test_ids = pool_n[start_of_test : end_of_test]
+        train_ids_before = pool_n[: start_of_test]
+        train_ids_after = pool_n[end_of_test :]
+        train_ids = np.hstack((train_ids_before, train_ids_after))
+        # print("test_ids", test_ids)
+        # print("train_ids", train_ids)
+        train_ids_per_fold.append(np.sort(train_ids))
+        test_ids_per_fold.append(np.sort(test_ids))
+
+    # The remaining folds will be of size 1 smaller than the previous
+    for j in range(n_folds - num_folds_large):
+        start_of_test = small_folds_start + (j * te_small)
+        end_of_test = small_folds_start + ((j + 1) * te_small)
+        test_ids = pool_n[start_of_test : end_of_test]
+        train_ids_before = pool_n[: start_of_test]
+        train_ids_after = pool_n[end_of_test :]
+        train_ids = np.hstack((train_ids_before, train_ids_after))
+        # print("test_ids", test_ids)
+        # print("train_ids", train_ids)
+        train_ids_per_fold.append(np.sort(train_ids))
+        test_ids_per_fold.append(np.sort(test_ids))        
+
+
     # TODO establish the row ids that belong to each fold's
     # train subset and test subset
 
     return train_ids_per_fold, test_ids_per_fold
+
+
+x, y = make_train_and_test_row_ids_for_n_fold_cv(7, 4, 9)
+print(x)
+print(y)
+
